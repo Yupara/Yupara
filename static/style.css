@@ -1,7 +1,7 @@
 body {
-    background: #0a1e0a;
-    color: white;
     font-family: Arial;
+    background-color: #0a1e0a;
+    color: white;
     padding: 20px;
 }
 
@@ -10,18 +10,17 @@ body {
     margin: 0 auto;
 }
 
-input {
-    padding: 8px;
-    margin-right: 10px;
-    background: #1a3a1a;
-    color: white;
-    border: 1px solid #2ecc71;
-}
-
 #chat {
     height: 300px;
     border: 1px solid #2ecc71;
     padding: 10px;
     margin: 10px 0;
     overflow-y: scroll;
+}
+
+button {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 8px 15px;
 }
