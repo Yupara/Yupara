@@ -122,3 +122,33 @@ async def chat_endpoint(websocket: WebSocket, username: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+from fastapi import UploadFile, File
+import os
+import uuid
+
+# Создаем папку для загрузок
+os.makedirs("static/uploads", exist_ok=True)
+
+@app.post("/upload_file")
+async def upload_file(
+    file: UploadFile = File(...),
+    sender: str = Form(...),
+    receiver: str = Form(...)
+):
+    # Генерируем уникальное имя файла
+    file_ext = file.filename.split(".")[-1]
+    file_name = f"{uuid.uuid4()}.{file_ext}"
+    file_path = f"static/uploads/{file_name}"
+    
+    # Сохраняем файл
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+    
+    # Отправляем уведомление в чат
+    if receiver == "all":
+        for conn in active_connections.values():
+            await conn.send_text(f"!file!{sender}:/uploads/{file_name}")
+    elif receiver in active_connections:
+        await active_connections[receiver].send_text(f"!file!{sender}:/uploads/{file_name}")
+    
+    return {"status": "success", "file_path": f"/uploads/{file_name}"}
