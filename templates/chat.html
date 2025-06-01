@@ -157,3 +157,53 @@
         // ... остальной код обработки сообщений
     };
 </script>
+// Замените обработчик файловых сообщений:
+ws.onmessage = function(event) {
+    const msg = event.data;
+    
+    if (msg.startsWith("!file!")) {
+        const [sender, content_type, file_url] = msg.replace("!file!", "").split(":");
+        
+        if (content_type === "image") {
+            // Превью изображения
+            const file_html = `
+                <div class="file-message">
+                    <p>🖼️ ${sender} отправил изображение:</p>
+                    <img src="${file_url}" class="image-preview" loading="lazy">
+                    <a href="${file_url}" target="_blank">Открыть оригинал</a>
+                </div>
+            `;
+            document.getElementById("chat").innerHTML += file_html;
+        } else {
+            // Обычный файл
+            const file_html = `
+                <div class="file-message">
+                    <p>📁 ${sender} отправил файл:</p>
+                    <a href="${file_url}" target="_blank">${file_url.split('/').pop()}</a>
+                </div>
+            `;
+            document.getElementById("chat").innerHTML += file_html;
+        }
+    }
+    // ... остальной код
+};
+<!-- Модальное окно для изображений -->
+<div id="imageModal" class="modal-image">
+    <span class="close-modal">&times;</span>
+    <img id="fullsize-image">
+</div>
+
+<script>
+    // Открытие изображений в полном размере
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('image-preview')) {
+            document.getElementById('fullsize-image').src = e.target.src;
+            document.getElementById('imageModal').style.display = 'block';
+        }
+    });
+    
+    // Закрытие модального окна
+    document.querySelector('.close-modal').onclick = function() {
+        document.getElementById('imageModal').style.display = 'none';
+    }
+</script>
