@@ -105,3 +105,56 @@ async def websocket_chat(websocket: WebSocket, username: str):
     finally:
         active_connections.pop(username, None)
         active_users.discard(username)
+@app.websocket("/ws/{username}")
+async def websocket_chat(websocket: WebSocket, username: str):
+    await websocket.accept()
+    active_connections[username] = websocket
+    active_users.add(username)
+
+    try:
+        # Отправляем историю общих и личных сообщений
+        with get_db() as db:
+            history = db.execute(
+                "SELECT * FROM messages WHERE is_private = 0 OR receiver = ? OR sender = ?",
+                (username, username)
+            ).fetchall()
+            for msg in history:
+                prefix = "[Лично] " if msg['is_private'] else ""
+                await websocket.send_text(f"{prefix}{msg['sender']}: {msg['message']}")
+
+        while True:
+            message = await websocket.receive_text()
+            
+            # Если сообщение начинается с @ (личное)
+            if message.startswith("@"):
+                parts = message.split(" ", 1)
+                if len(parts) < 2:
+                    continue
+                receiver_username = parts[0][1:]  # Убираем @
+                private_message = parts[1]
+                
+                if receiver_username in active_connections:
+                    # Сохраняем в БД как личное
+                    await save_message(
+                        sender=username,
+                        message=private_message,
+                        is_private=True,
+                        receiver=receiver_username
+                    )
+                    # Отправляем получателю
+                    await active_connections[receiver_username].send_text(
+                        f"[Лично] {username}: {private_message}"
+                    )
+                    # Отправляем отправителю для подтверждения
+                    await websocket.send_text(
+                        f"[Вы → {receiver_username}]: {private_message}"
+                    )
+            else:
+                # Общее сообщение
+                await save_message(username, message)
+                for conn in active_connections.values():
+                    await conn.send_text(f"{username}: {message}")
+                    
+    finally:
+        active_connections.pop(username, None)
+        active_users.discard(username)
