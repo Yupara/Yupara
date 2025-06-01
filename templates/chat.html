@@ -6,23 +6,22 @@
 </head>
 <body>
     <div class="container">
-        <h1>💬 Чат (Вы: {{ username }})</h1>
+        <h1>Чат: {{ username }}</h1>
         <div id="chat"></div>
-        <input type="text" id="message" placeholder="Ваше сообщение">
+        <input type="text" id="message">
         <button onclick="sendMessage()">Отправить</button>
     </div>
 
     <script>
-        const username = "{{ username }}";
-        const chat = new WebSocket(`ws://${window.location.host}/ws/${username}`);
+        const ws = new WebSocket(`ws://${window.location.host}/ws/{{ username }}`);
         
-        chat.onmessage = function(e) {
-            document.getElementById("chat").innerHTML += `<p>${e.data}</p>`;
+        ws.onmessage = function(event) {
+            document.getElementById("chat").innerHTML += `<p>${event.data}</p>`;
         };
         
         function sendMessage() {
             const input = document.getElementById("message");
-            chat.send(input.value);
+            ws.send(input.value);
             input.value = "";
         }
     </script>
