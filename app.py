@@ -22,3 +22,8 @@ async def home(request: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=port)
+@app.get("/admin")
+async def admin(request: Request, password: str = ""):
+    if password != "ваш-секретный-пароль":
+        return {"error": "Доступ запрещён"}
+    return templates.TemplateResponse("admin.html", {"request": request})
