@@ -64,3 +64,45 @@
     </script>
 </body>
 </html>
+<script>
+    // Воспроизведение звука уведомления
+    function playNotificationSound() {
+        const audio = new Audio('/static/notification.mp3');
+        audio.play().catch(e => console.log("Не удалось воспроизвести звук", e));
+    }
+
+    // Показ всплывающего уведомления
+    function showNotification(message) {
+        if (Notification.permission === "granted") {
+            new Notification("Новое сообщение", { body: message });
+        }
+    }
+
+    // Обновите обработчик сообщений
+    ws.onmessage = function(event) {
+        const msg = event.data;
+        
+        if (msg.startsWith("!private!")) {
+            // Личное сообщение с уведомлением
+            const cleanMsg = msg.replace("!private!", "");
+            document.getElementById("chat").innerHTML += 
+                `<p class="private-msg">${cleanMsg}</p>`;
+            
+            playNotificationSound();
+            showNotification(cleanMsg);
+        } else {
+            // Обычное сообщение
+            document.getElementById("chat").innerHTML += `<p>${msg}</p>`;
+        }
+        
+        document.getElementById("chat").scrollTop = 
+            document.getElementById("chat").scrollHeight;
+    };
+
+    // Запрос разрешения на уведомления при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.Notification && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    });
+</script>
