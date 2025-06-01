@@ -207,3 +207,19 @@ ws.onmessage = function(event) {
         document.getElementById('imageModal').style.display = 'none';
     }
 </script>
+<div class="upload-options">
+    <label>
+        <input type="checkbox" id="compress-checkbox" checked>
+        Сжимать изображения
+    </label>
+</div>
+
+<script>
+    // Модифицируем отправку файлов
+    document.getElementById('file-input').addEventListener('change', async function(e) {
+        const formData = new FormData();
+        formData.append('compress', 
+            document.getElementById('compress-checkbox').checked);
+        // ... остальной код отправки
+    });
+</script>
