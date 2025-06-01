@@ -1,15 +1,9 @@
-from fastapi import FastAPI, Request, Form, WebSocket
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+import os
+from fastapi import FastAPI
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+port = int(os.environ.get("PORT", 8080))  # Берёт порт из переменной Railway или 8080 для локального теста
 
-# Пример WebSocket для чата
-@app.websocket("/ws")
-async def chat(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        message = await websocket.receive_text()
-        await websocket.send_text(f"Вы написали: {message}")
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
