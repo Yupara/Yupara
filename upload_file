@@ -1,0 +1,27 @@
+@app.post("/upload_file")
+async def upload_file(
+    file: UploadFile = File(...),
+    sender: str = Form(...),
+    receiver: str = Form(...),
+    compress: bool = Form(default=True)
+):
+    file_ext = file.filename.split(".")[-1].lower()
+    file_name = f"{uuid.uuid4()}.{file_ext}"
+    file_path = f"static/uploads/{file_name}"
+    
+    # Сжимаем только изображения
+    if file_ext in ["jpg", "jpeg", "png"] and compress:
+        image = Image.open(io.BytesIO(await file.read()))
+        
+        # Оптимальные параметры сжатия
+        if file_ext in ["jpg", "jpeg"]:
+            image = image.convert("RGB")
+            image.save(file_path, "JPEG", quality=85, optimize=True)
+        else:
+            image.save(file_path, "PNG", optimize=True)
+    else:
+        # Обычное сохранение для других файлов
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
+    
+    # ... остальной код функции без изменений
