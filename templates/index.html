@@ -1,83 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>P2P Обменник</title>
+    <title>P2P Чат</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>💰 P2P Обменник</h1>
-        
-        <form action="/create_ad" method="post">
-            <select name="type" required>
-                <option value="buy">Купить</option>
-                <option value="sell">Продать</option>
-            </select>
-            <input type="text" name="asset" placeholder="USDT/BTC" required>
-            <input type="number" name="price" placeholder="Цена" step="0.01" required>
-            <input type="number" name="amount" placeholder="Количество" step="0.0001" required>
-            <button type="submit">Создать</button>
-        </form>
-
-        <div class="ads">
-            {% for ad in ads %}
-            <div class="ad {{ ad[1] }}">
-                <h3>{{ "🟢 Куплю" if ad[1] == 'buy' else "🔴 Продам" }} {{ ad[2] }}</h3>
-                <p>Цена: {{ ad[3] }} ₽</p>
-                <p>Количество: {{ ad[4] }}</p>
-                
-                {% if ad[1] == 'sell' %}
-                <form action="/buy/{{ ad[0] }}" method="post">
-                    <button type="submit">Купить</button>
-                </form>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</body>
-</html>
-<!-- Модальное окно чата -->
-<div id="chatModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <div id="chatMessages" style="height: 300px; overflow-y: scroll;"></div>
-        <input type="text" id="messageInput" placeholder="Ваше сообщение">
+        <h1>💬 Чат для сделки</h1>
+        <div id="chat"></div>
+        <input type="text" id="message" placeholder="Ваше сообщение">
         <button onclick="sendMessage()">Отправить</button>
     </div>
-</div>
 
-<script>
-    let currentAdId = 0;
-    let socket = null;
-    
-    // Открытие чата
-    function openChat(adId) {
-        currentAdId = adId;
-        document.getElementById('chatModal').style.display = 'block';
+    <script>
+        const chat = new WebSocket(`ws://${window.location.host}/ws/1`); // ad_id=1 для теста
         
-        // Подключаем WebSocket
-        socket = new WebSocket(`ws://${window.location.host}/ws/${adId}`);
-        
-        socket.onmessage = function(event) {
-            const messages = document.getElementById('chatMessages');
-            messages.innerHTML += `<p>${event.data}</p>`;
-            messages.scrollTop = messages.scrollHeight;
+        chat.onmessage = function(e) {
+            document.getElementById("chat").innerHTML += `<p>${e.data}</p>`;
         };
-    }
-    
-    // Закрытие чата
-    document.querySelector('.close').onclick = function() {
-        document.getElementById('chatModal').style.display = 'none';
-        if (socket) socket.close();
-    }
-    
-    // Отправка сообщения
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        if (socket && input.value) {
-            socket.send(input.value);
-            input.value = '';
+        
+        function sendMessage() {
+            const input = document.getElementById("message");
+            chat.send(input.value);
+            input.value = "";
         }
-    }
-</script>
+    </script>
+</body>
+</html>
