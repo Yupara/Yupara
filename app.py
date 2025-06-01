@@ -3,25 +3,24 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import os
 
-# 1. Создаем приложение
 app = FastAPI()
 
-# 2. Настраиваем папки для HTML и CSS
+# Настройка папок
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# 3. База данных для объявлений (пока просто список)
+# База данных (пока просто список)
 ads_db = [
     {"id": 1, "title": "Продам USDT", "price": 90},
     {"id": 2, "title": "Куплю BTC", "price": 2500000}
 ]
 
-# 4. Главная страница (P2P-доска)
-@app.get("/", response_class=HTMLResponse)
+# Главная страница
+@app.get("/")
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "ads": ads_db})
+    return {"message": "Сервер работает!"}
 
-# 5. Добавление объявления
+# Добавление объявления
 @app.post("/add_ad")
 async def add_ad(title: str, price: float):
     new_ad = {"id": len(ads_db)+1, "title": title, "price": price}
