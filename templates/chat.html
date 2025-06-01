@@ -106,3 +106,54 @@
         }
     });
 </script>
+<!-- Добавьте после поля ввода сообщения -->
+<form id="file-form" enctype="multipart/form-data">
+    <input type="file" id="file-input" style="display: none;">
+    <button type="button" onclick="document.getElementById('file-input').click()">
+        📎 Прикрепить файл
+    </button>
+</form>
+
+<script>
+    // Обработка выбора файла
+    document.getElementById('file-input').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('sender', username);
+        formData.append('receiver', currentReceiver || 'all');
+        
+        try {
+            const response = await fetch('/upload_file', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.status !== 'success') {
+                alert('Ошибка загрузки файла');
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    });
+
+    // Обработка файлов в сообщениях
+    ws.onmessage = function(event) {
+        const msg = event.data;
+        
+        if (msg.startsWith("!file!")) {
+            // Показ файла
+            const [sender, file_url] = msg.replace("!file!", "").split(":");
+            const file_html = `
+                <div class="file-message">
+                    <p>📁 ${sender} отправил файл:</p>
+                    <a href="${file_url}" target="_blank">${file_url.split('/').pop()}</a>
+                </div>
+            `;
+            document.getElementById("chat").innerHTML += file_html;
+        }
+        // ... остальной код обработки сообщений
+    };
+</script>
