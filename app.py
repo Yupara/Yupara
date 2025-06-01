@@ -47,3 +47,26 @@ async def home(request: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+from fastapi import WebSocket
+from typing import Dict, Set
+
+# Добавляем после импортов
+active_connections: Dict[str, WebSocket] = {}
+active_users: Set[str] = set()
+
+# Добавляем перед if __name__ == "__main__":
+@app.websocket("/ws/{username}")
+async def websocket_chat(websocket: WebSocket, username: str):
+    await websocket.accept()
+    active_connections[username] = websocket
+    active_users.add(username)
+    
+    try:
+        while True:
+            message = await websocket.receive_text()
+            # Рассылаем всем участникам
+            for connection in active_connections.values():
+                await connection.send_text(f"{username}: {message}")
+    finally:
+        active_connections.pop(username, None)
+        active_users.discard(username)
