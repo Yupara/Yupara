@@ -152,3 +152,32 @@ async def upload_file(
         await active_connections[receiver].send_text(f"!file!{sender}:/uploads/{file_name}")
     
     return {"status": "success", "file_path": f"/uploads/{file_name}"}
+# В методе upload_file добавьте проверку типа файла:
+allowed_image_types = ["jpg", "jpeg", "png", "gif"]
+
+@app.post("/upload_file")
+async def upload_file(
+    file: UploadFile = File(...),
+    sender: str = Form(...),
+    receiver: str = Form(...)
+):
+    file_ext = file.filename.split(".")[-1].lower()
+    file_name = f"{uuid.uuid4()}.{file_ext}"
+    file_path = f"static/uploads/{file_name}"
+    
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+    
+    # Определяем тип контента
+    if file_ext in allowed_image_types:
+        content_type = "image"
+    else:
+        content_type = "file"
+    
+    if receiver == "all":
+        for conn in active_connections.values():
+            await conn.send_text(f"!file!{sender}:{content_type}:/uploads/{file_name}")
+    elif receiver in active_connections:
+        await active_connections[receiver].send_text(f"!file!{sender}:{content_type}:/uploads/{file_name}")
+    
+    return {"status": "success", "file_path": f"/uploads/{file_name}"}
