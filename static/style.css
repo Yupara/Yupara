@@ -18,3 +18,19 @@
         font-weight: bold;
     }
 }
+.file-message {
+    background: #1a3a1a;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border-left: 3px solid #3498db;
+}
+
+.file-message a {
+    color: #2ecc71;
+    word-break: break-all;
+}
+
+#file-form {
+    margin-top: 10px;
+}
