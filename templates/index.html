@@ -2,44 +2,32 @@
 <html>
 <head>
     <title>P2P Обменник</title>
-    <style>
-        body {
-            font-family: Arial;
-            background-color: #0a1e0a;
-            color: white;
-            padding: 20px;
-        }
-        .ad {
-            background-color: #1a3a1a;
-            padding: 15px;
-            margin: 10px;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>💰 Мой P2P Обменник</h1>
-    
-    <form action="/add_ad" method="post">
-        <input type="text" name="title" placeholder="Название объявления" required>
-        <input type="number" name="price" placeholder="Цена" required>
-        <button type="submit">Добавить</button>
-    </form>
+    <div class="container">
+        <h1>💰 P2P Обменник</h1>
+        
+        <form action="/create_ad" method="post">
+            <select name="type" required>
+                <option value="buy">Купить</option>
+                <option value="sell">Продать</option>
+            </select>
+            <input type="text" name="asset" placeholder="USDT/BTC" required>
+            <input type="number" name="price" placeholder="Цена" step="0.01" required>
+            <input type="number" name="amount" placeholder="Количество" step="0.0001" required>
+            <button type="submit">Создать</button>
+        </form>
 
-    <h2>Список объявлений:</h2>
-    <div id="ads">
-        {% for ad in ads %}
-        <div class="ad">
-            <h3>{{ ad.title }}</h3>
-            <p>Цена: {{ ad.price }} ₽</p>
+        <div class="ads">
+            {% for ad in ads %}
+            <div class="ad {{ ad.type }}">
+                <h3>{{ "🟢 Куплю" if ad.type == 'buy' else "🔴 Продам" }} {{ ad.asset }}</h3>
+                <p>Цена: {{ ad.price }} ₽</p>
+                <p>Количество: {{ ad.amount }}</p>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 </body>
 </html>
