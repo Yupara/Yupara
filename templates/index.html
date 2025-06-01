@@ -1,15 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>P2P Exchange</title>
+    <title>P2P Обменник</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>💰 P2P Обменник</h1>
-        <div class="ads">
-            <!-- Список объявлений -->
+    <h1>💰 Мой P2P Обменник</h1>
+    
+    <!-- Форма добавления объявления -->
+    <form action="/add_ad" method="POST">
+        <input type="text" name="title" placeholder="Что продаем?" required>
+        <input type="number" name="price" placeholder="Цена" required>
+        <button type="submit">Добавить</button>
+    </form>
+
+    <!-- Список объявлений -->
+    <div class="ads">
+        {% for ad in ads %}
+        <div class="ad">
+            <h3>{{ ad.title }}</h3>
+            <p>Цена: {{ ad.price }} ₽</p>
         </div>
+        {% endfor %}
     </div>
 </body>
 </html>
