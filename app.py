@@ -1,40 +1,43 @@
 from fastapi import FastAPI, WebSocket, Request, Form
+from fastapi.responses import HTMLResponse  # Добавьте этот импорт
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 import sqlite3
 from datetime import datetime
 
 app = FastAPI()
+
+# Настройка статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # База данных
 def get_db():
-    return sqlite3.connect("p2p.db")
+    conn = sqlite3.connect("p2p.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
+# Инициализация БД
 def init_db():
-    db = get_db()
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY,
-            ad_id INTEGER,
-            sender TEXT,
-            text TEXT,
-            time TEXT
-        )
-    """)
-    db.commit()
+    with get_db() as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY,
+                username TEXT,
+                message TEXT,
+                timestamp TEXT
+            )
+        """)
 
 init_db()
 
 # Главная страница с формой ввода имени
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def home(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-# Страница чата
-@app.post("/chat", response_class=HTMLResponse)
+# Обработка формы
+@app.post("/chat")
 async def start_chat(request: Request, username: str = Form(...)):
     return templates.TemplateResponse(
         "chat.html",
@@ -43,25 +46,27 @@ async def start_chat(request: Request, username: str = Form(...)):
 
 # WebSocket-чат
 @app.websocket("/ws/{username}")
-async def chat(websocket: WebSocket, username: str):
+async def chat_endpoint(websocket: WebSocket, username: str):
     await websocket.accept()
-    db = get_db()
     
-    # Отправляем историю
-    history = db.execute("SELECT * FROM messages").fetchall()
-    for msg in history:
-        await websocket.send_text(f"{msg[2]}: {msg[3]} ({msg[4]})")
-    
-    # Прием новых сообщений
+    # Отправляем историю сообщений
+    with get_db() as db:
+        history = db.execute("SELECT * FROM messages").fetchall()
+        for msg in history:
+            await websocket.send_text(f"{msg['username']}: {msg['message']}")
+
+    # Принимаем новые сообщения
     while True:
         message = await websocket.receive_text()
-        time = datetime.now().strftime("%H:%M")
-        db.execute(
-            "INSERT INTO messages (ad_id, sender, text, time) VALUES (?, ?, ?, ?)",
-            (1, username, message, time)  # ad_id=1 для примера
-        )
-        db.commit()
-        await websocket.send_text(f"Вы: {message} ({time})")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        
+        with get_db() as db:
+            db.execute(
+                "INSERT INTO messages (username, message, timestamp) VALUES (?, ?, ?)",
+                (username, message, timestamp)
+            )
+        
+        await websocket.send_text(f"Вы: {message}")
 
 if __name__ == "__main__":
     import uvicorn
