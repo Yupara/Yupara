@@ -1,51 +1,27 @@
-button[type="submit"] {
-    background: #3498db;
-    margin-top: 10px;
-    transition: background 0.3s;
-}
-
-button[type="submit"]:hover {
-    background: #2980b9;
-}
-/* Стили для чата */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.7);
-}
-
-.modal-content {
-    background-color: #1a3a1a;
-    margin: 10% auto;
+body {
+    background: #0a1e0a;
+    color: white;
+    font-family: Arial;
     padding: 20px;
-    border: 1px solid #2ecc71;
-    width: 50%;
-    border-radius: 5px;
 }
 
-.close {
-    color: #e74c3c;
-    float: right;
-    font-size: 28px;
-    cursor: pointer;
+.container {
+    max-width: 600px;
+    margin: 0 auto;
 }
-#chatMessages p {
-    background: #2c3e50;
+
+input {
     padding: 8px;
-    border-radius: 4px;
-    margin: 5px 0;
-}
-
-#messageInput {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
+    margin-right: 10px;
     background: #1a3a1a;
     color: white;
     border: 1px solid #2ecc71;
+}
+
+#chat {
+    height: 300px;
+    border: 1px solid #2ecc71;
+    padding: 10px;
+    margin: 10px 0;
+    overflow-y: scroll;
 }
