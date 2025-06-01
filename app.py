@@ -1,91 +1,63 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, WebSocket, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, RedirectResponse
 import sqlite3
+from datetime import datetime
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# База данных
+# Подключаем базу данных
 def get_db():
     return sqlite3.connect("p2p.db")
 
+# Создаем таблицы (запустится 1 раз при старте)
 def init_db():
     db = get_db()
     db.execute("""
-        CREATE TABLE IF NOT EXISTS ads (
+        CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY,
-            type TEXT,
-            asset TEXT,
-            price REAL,
-            amount REAL
+            ad_id INTEGER,
+            sender TEXT,
+            text TEXT,
+            time TEXT
         )
     """)
     db.commit()
 
 init_db()
 
-# Главная страница
-@app.get("/", response_class=HTMLResponse)
+# WebSocket-чат
+@app.websocket("/ws/{ad_id}")
+async def chat(websocket: WebSocket, ad_id: int):
+    await websocket.accept()
+    db = get_db()
+    
+    # Отправляем историю сообщений
+    history = db.execute(
+        "SELECT sender, text, time FROM messages WHERE ad_id = ?",
+        (ad_id,)
+    ).fetchall()
+    
+    for msg in history:
+        await websocket.send_text(f"{msg[0]}: {msg[1]} ({msg[2]})")
+    
+    # Принимаем новые сообщения
+    while True:
+        message = await websocket.receive_text()
+        time = datetime.now().strftime("%H:%M")
+        db.execute(
+            "INSERT INTO messages (ad_id, sender, text, time) VALUES (?, ?, ?, ?)",
+            (ad_id, "Пользователь", message, time)  # Пока без регистрации
+        )
+        db.commit()
+        await websocket.send_text(f"Вы: {message} ({time})")
+
+@app.get("/")
 async def home(request: Request):
-    db = get_db()
-    ads = db.execute("SELECT * FROM ads").fetchall()
-    return templates.TemplateResponse(
-        "index.html", 
-        {"request": request, "ads": ads}
-    )
-
-# Создание объявления
-@app.post("/create_ad")
-async def create_ad(
-    type: str = Form(...),
-    asset: str = Form(...),
-    price: float = Form(...),
-    amount: float = Form(...)
-):
-    db = get_db()
-    db.execute(
-        "INSERT INTO ads (type, asset, price, amount) VALUES (?, ?, ?, ?)",
-        (type, asset, price, amount)
-    )
-    db.commit()
-    return RedirectResponse(url="/", status_code=303)
-
-# Обработка покупки
-@app.post("/buy/{ad_id}")
-async def buy_ad(ad_id: int):
-    db = get_db()
-    ad = db.execute("SELECT * FROM ads WHERE id = ?", (ad_id,)).fetchone()
-    
-    if not ad:
-        return {"status": "error", "message": "Объявление не найдено"}
-    
-    # Здесь будет логика сделки (пока просто удаляем объявление)
-    db.execute("DELETE FROM ads WHERE id = ?", (ad_id,))
-    db.commit()
-    return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse("index.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-from fastapi import WebSocket
-from typing import Dict
-
-# Храним активные WebSocket-соединения
-active_connections: Dict[int, WebSocket] = {}
-
-# WebSocket для чата в сделке
-@app.websocket("/ws/{ad_id}")
-async def websocket_chat(websocket: WebSocket, ad_id: int):
-    await websocket.accept()
-    active_connections[ad_id] = websocket
-    
-    try:
-        while True:
-            message = await websocket.receive_text()
-            # Отправляем сообщение обратно (пока без сохранения)
-            await websocket.send_text(f"Сообщение по сделке {ad_id}: {message}")
-    except:
-        del active_connections[ad_id]
