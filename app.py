@@ -1,29 +1,38 @@
-from fastapi import FastAPI, WebSocket, Request
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import JSONResponse
 import os
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
-port = int(os.environ.get("PORT", 8080))
 
-# WebSocket чат
-@app.websocket("/ws")
-async def chat(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        message = await websocket.receive_text()
-        await websocket.send_text(f"Вы: {message}")
+# Создаем папку для объявлений, если её нет
+os.makedirs("ads", exist_ok=True)
 
-# Главная страница
+# Ваши текущие роуты (например, главная страница)
 @app.get("/")
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def home():
+    return {"message": "Добро пожаловать в P2P обменник!"}
 
+# ▼▼▼ Добавьте этот новый эндпоинт ▼▼▼
+@app.post("/upload_ad")
+async def upload_ad(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        file_path = f"ads/{file.filename}"
+        
+        with open(file_path, "wb") as f:
+            f.write(contents)
+            
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Файл загружен", "filename": file.filename}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"message": f"Ошибка загрузки: {str(e)}"}
+        )
+
+# Запуск сервера (если используете __main__)
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=port)
-@app.get("/admin")
-async def admin(request: Request, password: str = ""):
-    if password != "ваш-секретный-пароль":
-        return {"error": "Доступ запрещён"}
-    return templates.TemplateResponse("admin.html", {"request": request})
+    uvicorn.run(app, host="0.0.0.0", port=8000)
