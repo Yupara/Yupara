@@ -1,3 +1,5 @@
+from PIL import Image
+import io
 from fastapi import FastAPI, WebSocket, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
