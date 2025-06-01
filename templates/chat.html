@@ -223,3 +223,20 @@ ws.onmessage = function(event) {
         // ... остальной код отправки
     });
 </script>
+<script>
+    const username = "{{ username }}";
+    const ws = new WebSocket(`ws://${window.location.host}/ws/${username}`);
+    
+    ws.onmessage = function(event) {
+        const chat = document.getElementById("chat");
+        chat.innerHTML += `<p>${event.data}</p>`;
+    };
+    
+    function sendMessage() {
+        const input = document.getElementById("message");
+        if (input.value.trim()) {
+            ws.send(input.value);
+            input.value = "";
+        }
+    }
+</script>
