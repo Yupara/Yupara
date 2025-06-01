@@ -10,15 +10,16 @@
             <h3>Онлайн ({{ active_users|length }})</h3>
             <ul id="users-list">
                 {% for user in active_users %}
-                <li>{{ user }}</li>
+                <li onclick="selectUser('{{ user }}')">{{ user }}</li>
                 {% endfor %}
             </ul>
         </div>
         
         <div class="chat-area">
             <h1>Чат: {{ username }}</h1>
+            <div id="chat-mode">Общий чат</div>
             <div id="chat"></div>
-            <input type="text" id="message">
+            <input type="text" id="message" placeholder="Напишите сообщение...">
             <button onclick="sendMessage()">Отправить</button>
         </div>
     </div>
@@ -26,26 +27,40 @@
     <script>
         const username = "{{ username }}";
         const ws = new WebSocket(`ws://${window.location.host}/ws/${username}`);
+        let currentReceiver = null;
+        
+        function selectUser(user) {
+            currentReceiver = user;
+            document.getElementById("chat-mode").innerText = `Лично: ${user}`;
+            document.getElementById("message").placeholder = `Сообщение для ${user}...`;
+        }
         
         ws.onmessage = function(event) {
-            if (event.data.startsWith("USERLIST:")) {
-                // Обновляем список пользователей
-                const users = event.data.split(":")[1].split(",");
-                const list = document.getElementById("users-list");
-                list.innerHTML = users.map(user => `<li>${user}</li>`).join("");
-            } else {
-                // Обычное сообщение
-                document.getElementById("chat").innerHTML += `<p>${event.data}</p>`;
-            }
+            document.getElementById("chat").innerHTML += `<p>${event.data}</p>`;
+            document.getElementById("chat").scrollTop = 
+                document.getElementById("chat").scrollHeight;
         };
         
         function sendMessage() {
             const input = document.getElementById("message");
-            if (input.value.trim()) {
-                ws.send(input.value);
+            const message = input.value.trim();
+            
+            if (message) {
+                if (currentReceiver) {
+                    ws.send(`@${currentReceiver} ${message}`);
+                } else {
+                    ws.send(message);
+                }
                 input.value = "";
             }
         }
+        
+        // Отправка по Enter
+        document.getElementById("message").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>
