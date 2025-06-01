@@ -21,10 +21,16 @@
 
         <div class="ads">
             {% for ad in ads %}
-            <div class="ad {{ ad.type }}">
-                <h3>{{ "🟢 Куплю" if ad.type == 'buy' else "🔴 Продам" }} {{ ad.asset }}</h3>
-                <p>Цена: {{ ad.price }} ₽</p>
-                <p>Количество: {{ ad.amount }}</p>
+            <div class="ad {{ ad[1] }}">
+                <h3>{{ "🟢 Куплю" if ad[1] == 'buy' else "🔴 Продам" }} {{ ad[2] }}</h3>
+                <p>Цена: {{ ad[3] }} ₽</p>
+                <p>Количество: {{ ad[4] }}</p>
+                
+                {% if ad[1] == 'sell' %}
+                <form action="/buy/{{ ad[0] }}" method="post">
+                    <button type="submit">Купить</button>
+                </form>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
