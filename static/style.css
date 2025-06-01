@@ -76,3 +76,14 @@
     font-size: 40px;
     cursor: pointer;
 }
+.upload-options {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.upload-options label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
