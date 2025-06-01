@@ -1,22 +1,17 @@
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 import sqlite3
-import os
 
 app = FastAPI()
-
-# Настройка папок
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Подключение к SQLite
+# База данных
 def get_db():
-    conn = sqlite3.connect("p2p.db")
-    return conn
+    return sqlite3.connect("p2p.db")
 
-# Создаем таблицу объявлений (выполнится один раз при первом запуске)
 def init_db():
     db = get_db()
     db.execute("""
@@ -30,7 +25,7 @@ def init_db():
     """)
     db.commit()
 
-init_db()  # Инициализируем базу
+init_db()
 
 # Главная страница
 @app.get("/", response_class=HTMLResponse)
@@ -38,11 +33,11 @@ async def home(request: Request):
     db = get_db()
     ads = db.execute("SELECT * FROM ads").fetchall()
     return templates.TemplateResponse(
-        "index.html",
+        "index.html", 
         {"request": request, "ads": ads}
     )
 
-# Добавление объявления
+# Создание объявления
 @app.post("/create_ad")
 async def create_ad(
     type: str = Form(...),
@@ -51,13 +46,26 @@ async def create_ad(
     amount: float = Form(...)
 ):
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
+    db.execute(
         "INSERT INTO ads (type, asset, price, amount) VALUES (?, ?, ?, ?)",
         (type, asset, price, amount)
     )
     db.commit()
-    return {"status": "success"}
+    return RedirectResponse(url="/", status_code=303)
+
+# Обработка покупки
+@app.post("/buy/{ad_id}")
+async def buy_ad(ad_id: int):
+    db = get_db()
+    ad = db.execute("SELECT * FROM ads WHERE id = ?", (ad_id,)).fetchone()
+    
+    if not ad:
+        return {"status": "error", "message": "Объявление не найдено"}
+    
+    # Здесь будет логика сделки (пока просто удаляем объявление)
+    db.execute("DELETE FROM ads WHERE id = ?", (ad_id,))
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)
 
 if __name__ == "__main__":
     import uvicorn
