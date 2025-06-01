@@ -70,3 +70,22 @@ async def buy_ad(ad_id: int):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+from fastapi import WebSocket
+from typing import Dict
+
+# Храним активные WebSocket-соединения
+active_connections: Dict[int, WebSocket] = {}
+
+# WebSocket для чата в сделке
+@app.websocket("/ws/{ad_id}")
+async def websocket_chat(websocket: WebSocket, ad_id: int):
+    await websocket.accept()
+    active_connections[ad_id] = websocket
+    
+    try:
+        while True:
+            message = await websocket.receive_text()
+            # Отправляем сообщение обратно (пока без сохранения)
+            await websocket.send_text(f"Сообщение по сделке {ad_id}: {message}")
+    except:
+        del active_connections[ad_id]
