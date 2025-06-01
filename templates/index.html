@@ -37,3 +37,47 @@
     </div>
 </body>
 </html>
+<!-- Модальное окно чата -->
+<div id="chatModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="chatMessages" style="height: 300px; overflow-y: scroll;"></div>
+        <input type="text" id="messageInput" placeholder="Ваше сообщение">
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
+</div>
+
+<script>
+    let currentAdId = 0;
+    let socket = null;
+    
+    // Открытие чата
+    function openChat(adId) {
+        currentAdId = adId;
+        document.getElementById('chatModal').style.display = 'block';
+        
+        // Подключаем WebSocket
+        socket = new WebSocket(`ws://${window.location.host}/ws/${adId}`);
+        
+        socket.onmessage = function(event) {
+            const messages = document.getElementById('chatMessages');
+            messages.innerHTML += `<p>${event.data}</p>`;
+            messages.scrollTop = messages.scrollHeight;
+        };
+    }
+    
+    // Закрытие чата
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('chatModal').style.display = 'none';
+        if (socket) socket.close();
+    }
+    
+    // Отправка сообщения
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        if (socket && input.value) {
+            socket.send(input.value);
+            input.value = '';
+        }
+    }
+</script>
