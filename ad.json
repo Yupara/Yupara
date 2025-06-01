@@ -1,0 +1,7 @@
+{
+  "type": "sell",
+  "amount": 100,
+  "currency": "USDT",
+  "price": 90,
+  "fiat": "RUB"
+}
