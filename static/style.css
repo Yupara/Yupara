@@ -34,3 +34,18 @@ button[type="submit"]:hover {
     font-size: 28px;
     cursor: pointer;
 }
+#chatMessages p {
+    background: #2c3e50;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+#messageInput {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #1a3a1a;
+    color: white;
+    border: 1px solid #2ecc71;
+}
