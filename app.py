@@ -1,21 +1,26 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import os
 
 app = FastAPI()
 
-# Создаем папку для объявлений, если её нет
+# Создаем папку для хранения объявлений
 os.makedirs("ads", exist_ok=True)
 
-# Ваши текущие роуты (например, главная страница)
+# Ваши существующие роуты
 @app.get("/")
 async def home():
-    return {"message": "Добро пожаловать в P2P обменник!"}
+    return {"message": "P2P Обменник"}
 
 # ▼▼▼ Добавьте этот новый эндпоинт ▼▼▼
 @app.post("/upload_ad")
-async def upload_ad(file: UploadFile = File(...)):
+async def upload_ad(file: UploadFile = File(..., max_size=1_000_000)):  # Лимит 1MB
     try:
+        # Проверяем расширение файла
+        if not file.filename.endswith('.json'):
+            raise HTTPException(status_code=400, detail="Только JSON-файлы разрешены")
+        
+        # Читаем и сохраняем файл
         contents = await file.read()
         file_path = f"ads/{file.filename}"
         
@@ -24,15 +29,17 @@ async def upload_ad(file: UploadFile = File(...)):
             
         return JSONResponse(
             status_code=200,
-            content={"message": "Файл загружен", "filename": file.filename}
+            content={
+                "message": "Файл успешно загружен",
+                "filename": file.filename,
+                "saved_path": file_path
+            }
         )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        return JSONResponse(
+        raise HTTPException(
             status_code=500,
-            content={"message": f"Ошибка загрузки: {str(e)}"}
+            detail=f"Ошибка загрузки файла: {str(e)}"
         )
-
-# Запуск сервера (если используете __main__)
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
