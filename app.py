@@ -60,7 +60,7 @@ async def chat_endpoint(websocket: WebSocket, username: str):
     active_connections[username] = websocket
     
     try:
-        # Отправляем историю общих сообщений
+        # Отправляем историю сообщений
         with get_db() as db:
             history = db.execute(
                 "SELECT * FROM messages WHERE is_private = 0 OR receiver = ? OR sender = ?",
@@ -77,14 +77,13 @@ async def chat_endpoint(websocket: WebSocket, username: str):
         while True:
             data = await websocket.receive_text()
             
-            # Формат: "@username сообщение" для личных сообщений
+            # Обработка личных сообщений
             if data.startswith("@"):
                 receiver, *message = data.split(" ", 1)
                 receiver = receiver[1:]  # Убираем @
                 message = message[0] if message else ""
                 
                 if receiver in active_connections:
-                    # Сохраняем личное сообщение
                     timestamp = datetime.now().strftime("%H:%M:%S")
                     with get_db() as db:
                         db.execute(
@@ -94,9 +93,9 @@ async def chat_endpoint(websocket: WebSocket, username: str):
                             (username, receiver, message, timestamp)
                         )
                     
-                    # Отправляем получателю
+                    # Отправка получателю
                     await active_connections[receiver].send_text(
-                        f"[Лично] {username}: {message}"
+                        f"!private!{username}: {message}"
                     )
                     await websocket.send_text(
                         f"[Вы → {receiver}]: {message}"
@@ -112,7 +111,7 @@ async def chat_endpoint(websocket: WebSocket, username: str):
                         (username, "", data, timestamp)
                     )
                 
-                # Рассылаем всем
+                # Рассылка всем
                 for user, conn in active_connections.items():
                     await conn.send_text(f"{username}: {data}")
                     
@@ -123,21 +122,3 @@ async def chat_endpoint(websocket: WebSocket, username: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-# В методе chat_endpoint замените блок отправки личных сообщений на:
-if receiver in active_connections:
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    with get_db() as db:
-        db.execute(
-            """INSERT INTO messages 
-            (sender, receiver, message, timestamp, is_private) 
-            VALUES (?, ?, ?, ?, 1)""",
-            (username, receiver, message, timestamp)
-        )
-    
-    # Отправляем получателю с флагом уведомления
-    await active_connections[receiver].send_text(
-        f"!private!{username}: {message}"
-    )
-    await websocket.send_text(
-        f"[Вы → {receiver}]: {message}"
-    )
