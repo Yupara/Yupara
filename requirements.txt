@@ -3,3 +3,6 @@ fastapi
 uvicorn
 jinja2
 websockets
+fastapi
+uvicorn
+python-multipart
