@@ -6,23 +6,45 @@
 </head>
 <body>
     <div class="container">
-        <h1>Чат: {{ username }}</h1>
-        <div id="chat"></div>
-        <input type="text" id="message">
-        <button onclick="sendMessage()">Отправить</button>
+        <div class="sidebar">
+            <h3>Онлайн ({{ active_users|length }})</h3>
+            <ul id="users-list">
+                {% for user in active_users %}
+                <li>{{ user }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="chat-area">
+            <h1>Чат: {{ username }}</h1>
+            <div id="chat"></div>
+            <input type="text" id="message">
+            <button onclick="sendMessage()">Отправить</button>
+        </div>
     </div>
 
     <script>
-        const ws = new WebSocket(`ws://${window.location.host}/ws/{{ username }}`);
+        const username = "{{ username }}";
+        const ws = new WebSocket(`ws://${window.location.host}/ws/${username}`);
         
         ws.onmessage = function(event) {
-            document.getElementById("chat").innerHTML += `<p>${event.data}</p>`;
+            if (event.data.startsWith("USERLIST:")) {
+                // Обновляем список пользователей
+                const users = event.data.split(":")[1].split(",");
+                const list = document.getElementById("users-list");
+                list.innerHTML = users.map(user => `<li>${user}</li>`).join("");
+            } else {
+                // Обычное сообщение
+                document.getElementById("chat").innerHTML += `<p>${event.data}</p>`;
+            }
         };
         
         function sendMessage() {
             const input = document.getElementById("message");
-            ws.send(input.value);
-            input.value = "";
+            if (input.value.trim()) {
+                ws.send(input.value);
+                input.value = "";
+            }
         }
     </script>
 </body>
