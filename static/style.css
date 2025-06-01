@@ -1,44 +1,28 @@
-body {
-    font-family: Arial;
-    background-color: #0a1e0a;
-    color: white;
-    margin: 0;
-    padding: 0;
-}
-
-.container {
-    display: flex;
-    height: 100vh;
-}
-
-.sidebar {
-    width: 200px;
-    background-color: #1a3a1a;
-    padding: 20px;
-    border-right: 1px solid #2ecc71;
-}
-
-.chat-area {
-    flex: 1;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-}
-
-#chat {
-    flex: 1;
-    border: 1px solid #2ecc71;
-    padding: 10px;
-    margin: 10px 0;
-    overflow-y: scroll;
-}
-
-#users-list {
-    list-style: none;
-    padding: 0;
+/* Добавьте эти стили в конец файла */
+#chat-mode {
+    color: #2ecc71;
+    padding: 5px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #2ecc71;
 }
 
 #users-list li {
-    padding: 5px 0;
-    color: #2ecc71;
+    cursor: pointer;
+    transition: background 0.3s;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+#users-list li:hover {
+    background: #2ecc71;
+    color: #0a1e0a;
+}
+
+#message {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #1a3a1a;
+    color: white;
+    border: 1px solid #2ecc71;
 }
