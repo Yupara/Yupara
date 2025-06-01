@@ -70,3 +70,38 @@ async def websocket_chat(websocket: WebSocket, username: str):
     finally:
         active_connections.pop(username, None)
         active_users.discard(username)
+from datetime import datetime
+
+# Функция для сохранения сообщения в БД
+async def save_message(sender: str, message: str, is_private: bool = False, receiver: str = None):
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO messages 
+            (sender, receiver, message, timestamp, is_private) 
+            VALUES (?, ?, ?, ?, ?)""",
+            (sender, receiver, message, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), int(is_private))
+        )
+        db.commit()
+
+# Обновите WebSocket-эндпоинт:
+@app.websocket("/ws/{username}")
+async def websocket_chat(websocket: WebSocket, username: str):
+    await websocket.accept()
+    active_connections[username] = websocket
+    active_users.add(username)
+
+    try:
+        # Отправляем историю сообщений при подключении
+        with get_db() as db:
+            history = db.execute("SELECT sender, message FROM messages WHERE is_private = 0 OR receiver = ?", (username,)).fetchall()
+            for msg in history:
+                await websocket.send_text(f"{msg['sender']}: {msg['message']}")
+
+        while True:
+            message = await websocket.receive_text()
+            await save_message(username, message)  # Сохраняем в БД
+            for conn in active_connections.values():
+                await conn.send_text(f"{username}: {message}")
+    finally:
+        active_connections.pop(username, None)
+        active_users.discard(username)
