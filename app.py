@@ -123,3 +123,21 @@ async def chat_endpoint(websocket: WebSocket, username: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+# В методе chat_endpoint замените блок отправки личных сообщений на:
+if receiver in active_connections:
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO messages 
+            (sender, receiver, message, timestamp, is_private) 
+            VALUES (?, ?, ?, ?, 1)""",
+            (username, receiver, message, timestamp)
+        )
+    
+    # Отправляем получателю с флагом уведомления
+    await active_connections[receiver].send_text(
+        f"!private!{username}: {message}"
+    )
+    await websocket.send_text(
+        f"[Вы → {receiver}]: {message}"
+    )
